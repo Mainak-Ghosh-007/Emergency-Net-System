@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>EmergencyNet — Admin Login</title>
+
+<link rel="stylesheet" href="/static/css/style.css">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+</head>
+
+<body class="auth-body">
+
+
+<!-- BACKGROUND -->
+<div class="auth-bg">
+    <div class="auth-pulse"></div>
+    <div class="auth-pulse delay1"></div>
+    <div class="auth-pulse delay2"></div>
+</div>
+
+
+
+<div class="auth-container">
+
+    <div class="auth-card">
+
+        <!-- LOGO -->
+        <div class="auth-logo">
+
+            <div class="logo-icon">
+                🛡️
+            </div>
+
+            <h1>
+                EmergencyNet
+            </h1>
+
+            <p class="auth-tagline">
+                Secure Admin Access
+            </p>
+
+        </div>
+
+
+
+        <!-- FORM -->
+        <div class="auth-form-section">
+
+            <h2>
+                Admin Login
+            </h2>
+
+            <p class="auth-sub">
+                Authorized personnel only
+            </p>
+
+
+
+            <!-- USERNAME -->
+            <div class="form-group">
+
+                <label>
+                    Username
+                </label>
+
+                <div class="input-wrap">
+
+                    <span class="input-icon">
+                        👤
+                    </span>
+
+                    <input
+                        type="text"
+                        id="username"
+                        placeholder="Enter admin username"
+                    >
+
+                </div>
+
+            </div>
+
+
+
+            <!-- PASSWORD -->
+            <div class="form-group">
+
+                <label>
+                    Password
+                </label>
+
+                <div class="input-wrap">
+
+                    <span class="input-icon">
+                        🔒
+                    </span>
+
+                    <input
+                        type="password"
+                        id="password"
+                        placeholder="Enter password"
+                    >
+
+                </div>
+
+            </div>
+
+
+
+            <!-- BUTTON -->
+            <button
+                class="btn-primary"
+                onclick="doAdminLogin()"
+            >
+                <span id="btnText">
+                    Login
+                </span>
+
+                <span class="btn-arrow">
+                    →
+                </span>
+            </button>
+
+
+
+            <div
+                id="msg"
+                class="msg-box hidden"
+            ></div>
+
+
+
+            <div class="auth-divider">
+                <span>
+                    User Access
+                </span>
+            </div>
+
+
+
+            <a
+                href="/"
+                class="btn-secondary"
+            >
+                Back to User Login
+            </a>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+
+<script>
+
+async function doAdminLogin() {
+
+    const username =
+        document
+        .getElementById("username")
+        .value
+        .trim();
+
+    const password =
+        document
+        .getElementById("password")
+        .value
+        .trim();
+
+    if (!username || !password) {
+
+        showMsg(
+            "❌ Enter username and password.",
+            "error"
+        );
+
+        return;
+    }
+
+    document.getElementById(
+        "btnText"
+    ).textContent =
+    "Signing in...";
+
+
+    try {
+
+        const res =
+            await fetch(
+                "/admin_login",
+                {
+                    method: "POST",
+
+                    headers: {
+                        "Content-Type":
+                        "application/json"
+                    },
+
+                    body: JSON.stringify({
+                        username,
+                        password
+                    })
+                }
+            );
+
+        const data =
+            await res.json();
+
+        if (data.success) {
+
+            showMsg(
+                "✅ Login successful",
+                "success"
+            );
+
+            setTimeout(
+                function () {
+                    window.location.href =
+                        data.redirect;
+                },
+                800
+            );
+
+        } else {
+
+            showMsg(
+                "❌ Invalid credentials",
+                "error"
+            );
+
+            document.getElementById(
+                "btnText"
+            ).textContent =
+            "Login";
+        }
+
+    } catch (error) {
+
+        showMsg(
+            "❌ Server connection failed.",
+            "error"
+        );
+
+        document.getElementById(
+            "btnText"
+        ).textContent =
+        "Login";
+    }
+
+}
+
+
+
+function showMsg(text, type) {
+
+    const el =
+        document.getElementById(
+            "msg"
+        );
+
+    el.textContent =
+        text;
+
+    el.className =
+        "msg-box " + type;
+}
+
+
+
+document.addEventListener(
+    "keypress",
+    function(e) {
+
+        if (e.key === "Enter") {
+            doAdminLogin();
+        }
+
+    }
+);
+
+</script>
+
+</body>
+</html>

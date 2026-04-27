@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>EmergencyNet — Login</title>
+
+<link rel="stylesheet" href="/static/css/style.css">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+</head>
+
+<body class="auth-body">
+
+<div class="auth-bg">
+    <div class="auth-pulse"></div>
+    <div class="auth-pulse delay1"></div>
+    <div class="auth-pulse delay2"></div>
+</div>
+
+
+<div class="auth-container">
+
+    <div class="auth-card">
+
+        <!-- LOGO -->
+        <div class="auth-logo">
+
+            <div class="logo-icon">
+                🚨
+            </div>
+
+            <h1>
+                EmergencyNet
+            </h1>
+
+            <p class="auth-tagline">
+                Your safety, our priority
+            </p>
+
+        </div>
+
+
+
+        <!-- LOGIN FORM -->
+        <div class="auth-form-section">
+
+            <h2>
+                Sign In
+            </h2>
+
+            <p class="auth-sub">
+                Enter your registered phone number
+            </p>
+
+
+
+            <!-- PHONE -->
+            <div class="form-group">
+
+                <label for="phone">
+                    Phone Number
+                </label>
+
+                <div class="input-wrap">
+
+                    <span class="input-icon">
+                        📱
+                    </span>
+
+                    <input
+                        type="tel"
+                        id="phone"
+                        placeholder="e.g. 9999999999"
+                        maxlength="10"
+                    >
+
+                </div>
+
+            </div>
+
+
+
+            <!-- USER LOGIN -->
+            <button
+                class="btn-primary"
+                onclick="doLogin()"
+            >
+                <span id="loginText">
+                    Login
+                </span>
+
+                <span class="btn-arrow">
+                    →
+                </span>
+            </button>
+
+
+
+            <div
+                id="msg"
+                class="msg-box hidden"
+            ></div>
+
+
+
+            <!-- REGISTER -->
+            <div class="auth-divider">
+                <span>
+                    New user?
+                </span>
+            </div>
+
+            <a
+                href="/register_page"
+                class="btn-secondary"
+            >
+                Create Account
+            </a>
+
+
+
+            <!-- ADMIN LOGIN -->
+            <div class="auth-divider">
+                <span>
+                    Staff Access
+                </span>
+            </div>
+
+            <a
+                href="/admin_login_page"
+                class="btn-secondary admin-btn"
+            >
+                🛡️ Admin Login
+            </a>
+
+        </div>
+
+    </div>
+
+
+
+    <!-- INFO BADGES -->
+    <div class="auth-info">
+
+        <div class="info-badge">
+            🏥 Hospitals
+        </div>
+
+        <div class="info-badge">
+            🚔 Police
+        </div>
+
+        <div class="info-badge">
+            🚒 Fire
+        </div>
+
+        <div class="info-badge">
+            🚇 Metro
+        </div>
+
+    </div>
+
+</div>
+
+
+
+<script>
+
+async function doLogin() {
+
+    const phone =
+        document
+        .getElementById("phone")
+        .value
+        .trim();
+
+    if (!phone || phone.length < 10) {
+
+        showMsg(
+            "Please enter a valid 10-digit phone number.",
+            "error"
+        );
+
+        return;
+    }
+
+    const btnText =
+        document.getElementById(
+            "loginText"
+        );
+
+    btnText.textContent =
+        "Signing in...";
+
+    try {
+
+        const res =
+            await fetch(
+                "/login",
+                {
+                    method: "POST",
+
+                    headers: {
+                        "Content-Type":
+                        "application/json"
+                    },
+
+                    body: JSON.stringify({
+                        phone: phone
+                    })
+                }
+            );
+
+        const data =
+            await res.json();
+
+        if (data.success) {
+
+            showMsg(
+                "✅ " + data.message,
+                "success"
+            );
+
+            setTimeout(
+                function () {
+                    window.location.href =
+                        data.redirect;
+                },
+                800
+            );
+
+        } else {
+
+            showMsg(
+                "❌ " + data.message,
+                "error"
+            );
+
+            btnText.textContent =
+                "Login";
+        }
+
+    } catch (e) {
+
+        showMsg(
+            "❌ Connection error. Is server running?",
+            "error"
+        );
+
+        btnText.textContent =
+            "Login";
+    }
+}
+
+
+
+function showMsg(text, type) {
+
+    const el =
+        document.getElementById("msg");
+
+    el.textContent = text;
+
+    el.className =
+        "msg-box " + type;
+}
+
+
+
+document
+.getElementById("phone")
+.addEventListener(
+    "keypress",
+    function(e) {
+
+        if (e.key === "Enter") {
+            doLogin();
+        }
+
+    }
+);
+
+</script>
+
+</body>
+</html>

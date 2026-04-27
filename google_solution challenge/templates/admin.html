@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>EmergencyNet — Admin Panel</title>
+
+<link rel="stylesheet" href="/static/css/style.css">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+</head>
+
+<body class="admin-body">
+
+
+<!-- NAVBAR -->
+<nav class="navbar">
+
+    <a href="/dashboard" class="nav-back">
+        ← Dashboard
+    </a>
+
+    <div class="nav-brand">
+        🛡️ Admin Panel
+    </div>
+
+    <div class="nav-user">
+
+        <button
+            onclick="refreshAlerts()"
+            class="nav-refresh"
+        >
+            🔄 Refresh
+        </button>
+
+        <a href="/logout" class="nav-logout">
+            Logout
+        </a>
+
+    </div>
+
+</nav>
+
+
+
+<div class="admin-container">
+
+    <!-- TOP STATS -->
+    <div class="admin-header">
+
+        <div class="admin-stat">
+            <span class="stat-num">
+                {{ alerts|length }}
+            </span>
+
+            <span class="stat-label">
+                Total Alerts
+            </span>
+        </div>
+
+
+        <div class="admin-stat">
+            <span
+                class="stat-num"
+                id="liveCount"
+            >
+                {{ alerts|length }}
+            </span>
+
+            <span class="stat-label">
+                Auto refresh in
+                <span id="countdown">
+                    30
+                </span>s
+            </span>
+        </div>
+
+
+        <div class="admin-stat urgent-box">
+            <span class="stat-num">
+                🚨
+            </span>
+
+            <span class="stat-label">
+                Female / Threat Cases Prioritized
+            </span>
+        </div>
+
+    </div>
+
+
+
+    <!-- TABLE -->
+    <div class="admin-table-wrap">
+
+        {% if alerts %}
+
+        <table
+            class="admin-table"
+            id="alertsTable"
+        >
+
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>ID</th>
+                    <th>User</th>
+                    <th>Phone</th>
+                    <th>Category</th>
+                    <th>Status</th>
+                    <th>Priority</th>
+                    <th>Latitude</th>
+                    <th>Longitude</th>
+                    <th>Time</th>
+                    <th>Map</th>
+                </tr>
+            </thead>
+
+
+            <tbody>
+
+                {% for a in alerts %}
+
+                <tr class="{% if a.priority > 1 %}priority-row{% endif %}">
+
+                    <td>
+                        {{ loop.index }}
+                    </td>
+
+                    <td>
+                        <span class="alert-id">
+                            #{{ a.id }}
+                        </span>
+                    </td>
+
+                    <td>
+                        {{ a.name or 'Unknown' }}
+                    </td>
+
+                    <td>
+                        {{ a.phone or '—' }}
+                    </td>
+
+                    <td>
+                        {{ a.category }}
+                    </td>
+
+                    <td>
+                        {% if a.status == "active" %}
+                            🔴 Active
+                        {% else %}
+                            🟢 Closed
+                        {% endif %}
+                    </td>
+
+                    <td>
+                        {% if a.priority > 1 %}
+                            🚨 High
+                        {% else %}
+                            Normal
+                        {% endif %}
+                    </td>
+
+                    <td class="coord">
+                        {{ "%.5f"|format(a.lat) }}
+                    </td>
+
+                    <td class="coord">
+                        {{ "%.5f"|format(a.lon) }}
+                    </td>
+
+                    <td class="time-cell">
+                        {{ a.time }}
+                    </td>
+
+                    <td>
+
+                        <a
+                            href="https://www.openstreetmap.org/?mlat={{ a.lat }}&mlon={{ a.lon }}&zoom=16"
+                            target="_blank"
+                            class="map-link"
+                        >
+                            🗺️ View
+                        </a>
+
+                    </td>
+
+                </tr>
+
+                {% endfor %}
+
+            </tbody>
+
+        </table>
+
+
+        {% else %}
+
+        <div class="empty-state">
+
+            <div class="empty-icon">
+                📭
+            </div>
+
+            <p>
+                No SOS alerts yet
+            </p>
+
+            <span>
+                Incoming emergency alerts will appear here
+            </span>
+
+        </div>
+
+        {% endif %}
+
+    </div>
+
+</div>
+
+
+
+<script>
+
+let countdown = 30;
+
+
+setInterval(function () {
+
+    countdown--;
+
+    const countEl =
+        document.getElementById(
+            "countdown"
+        );
+
+    if (countEl) {
+        countEl.textContent =
+            countdown;
+    }
+
+    if (countdown <= 0) {
+        refreshAlerts();
+        countdown = 30;
+    }
+
+}, 1000);
+
+
+
+async function refreshAlerts() {
+
+    try {
+
+        const res =
+            await fetch("/alerts");
+
+        const data =
+            await res.json();
+
+        const live =
+            document.getElementById(
+                "liveCount"
+            );
+
+        if (live) {
+            live.textContent =
+                data.alerts.length;
+        }
+
+        location.reload();
+
+    } catch (error) {
+
+        console.log(
+            "Refresh failed"
+        );
+
+    }
+
+    countdown = 30;
+}
+
+</script>
+
+</body>
+</html>

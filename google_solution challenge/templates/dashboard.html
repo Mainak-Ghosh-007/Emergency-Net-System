@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>EmergencyNet — Dashboard</title>
+
+<link rel="stylesheet" href="/static/css/style.css">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+</head>
+
+<body class="dash-body">
+
+<!-- NAVBAR -->
+<nav class="navbar">
+
+    <div class="nav-brand">
+        🚨 EmergencyNet
+    </div>
+
+    <div class="nav-user">
+        <span>
+            👋 Welcome, {{ user.name }}
+        </span>
+
+        <a href="/logout" class="nav-logout">
+            Logout
+        </a>
+    </div>
+
+</nav>
+
+
+<div class="dash-container">
+
+    <!-- SOS SECTION -->
+    <section class="sos-section">
+
+        <div class="sos-ring">
+
+            <button
+                class="sos-btn"
+                id="sosBtn"
+                onclick="triggerSOS()"
+            >
+                <span class="sos-label">
+                    SOS
+                </span>
+
+                <span class="sos-sub">
+                    Tap for Emergency Help
+                </span>
+            </button>
+
+        </div>
+
+        <p class="sos-hint">
+            Sends your live location instantly to admin panel
+        </p>
+
+        <div
+            id="sosMsg"
+            class="sos-msg hidden"
+        ></div>
+
+    </section>
+
+
+
+    <!-- QUICK ACTIONS -->
+    <section class="quick-actions">
+
+        <h3 class="section-title">
+            Quick Access
+        </h3>
+
+        <div class="action-grid">
+
+            <a href="/map" class="action-card map-card">
+
+                <div class="action-icon">
+                    🗺️
+                </div>
+
+                <div class="action-text">
+                    <strong>Live Map</strong>
+                    <span>Hospitals / Police / Fire</span>
+                </div>
+
+                <div class="action-arrow">
+                    →
+                </div>
+
+            </a>
+
+
+            <div
+                class="action-card safety-card"
+                onclick="toggleSafetyMode()"
+            >
+
+                <div class="action-icon">
+                    📡
+                </div>
+
+                <div class="action-text">
+                    <strong>Safety Mode</strong>
+                    <span id="safetyStatus">
+                        Off — tap to enable
+                    </span>
+                </div>
+
+                <div
+                    class="toggle-dot"
+                    id="safetyDot"
+                ></div>
+
+            </div>
+
+        </div>
+
+    </section>
+
+
+
+    <!-- EMERGENCY CALLS -->
+    <section class="emergency-calls">
+
+        <h3 class="section-title">
+            Emergency Numbers
+        </h3>
+
+        <div class="call-grid">
+
+            <a href="tel:102" class="call-card ambulance">
+                <div class="call-icon">🚑</div>
+                <div class="call-info">
+                    <strong>Ambulance</strong>
+                    <span>102</span>
+                </div>
+            </a>
+
+            <a href="tel:100" class="call-card police">
+                <div class="call-icon">🚔</div>
+                <div class="call-info">
+                    <strong>Police</strong>
+                    <span>100</span>
+                </div>
+            </a>
+
+            <a href="tel:101" class="call-card fire">
+                <div class="call-icon">🚒</div>
+                <div class="call-info">
+                    <strong>Fire</strong>
+                    <span>101</span>
+                </div>
+            </a>
+
+            <a href="tel:1091" class="call-card women">
+                <div class="call-icon">👩</div>
+                <div class="call-info">
+                    <strong>Women Help</strong>
+                    <span>1091</span>
+                </div>
+            </a>
+
+            <a href="tel:108" class="call-card disaster">
+                <div class="call-icon">🆘</div>
+                <div class="call-info">
+                    <strong>Disaster Help</strong>
+                    <span>108</span>
+                </div>
+            </a>
+
+            {% if user.emergency_contact %}
+            <a
+                href="tel:{{ user.emergency_contact }}"
+                class="call-card personal"
+            >
+                <div class="call-icon">❤️</div>
+                <div class="call-info">
+                    <strong>Personal Contact</strong>
+                    <span>{{ user.emergency_contact }}</span>
+                </div>
+            </a>
+            {% endif %}
+
+        </div>
+
+    </section>
+
+
+
+    <!-- PROFILE -->
+    <section class="profile-card-section">
+
+        <h3 class="section-title">
+            My Profile
+        </h3>
+
+        <div class="profile-card">
+
+            <div class="profile-avatar">
+                {{ user.name[0] | upper }}
+            </div>
+
+            <div class="profile-details">
+
+                <div class="profile-row">
+                    <span class="label">Name</span>
+                    <span>{{ user.name }}</span>
+                </div>
+
+                <div class="profile-row">
+                    <span class="label">Phone</span>
+                    <span>{{ user.phone }}</span>
+                </div>
+
+                <div class="profile-row">
+                    <span class="label">Email</span>
+                    <span>{{ user.email }}</span>
+                </div>
+
+                <div class="profile-row">
+                    <span class="label">Gender</span>
+                    <span>{{ user.gender }}</span>
+                </div>
+
+                {% if user.emergency_contact %}
+                <div class="profile-row">
+                    <span class="label">Emergency</span>
+                    <span>{{ user.emergency_contact }}</span>
+                </div>
+                {% endif %}
+
+            </div>
+
+        </div>
+
+    </section>
+
+
+
+    <!-- ACTION BUTTONS -->
+    <section class="quick-actions">
+
+        <h3 class="section-title">
+            More Options
+        </h3>
+
+        <div class="action-grid">
+
+            <a
+                href="/profile_page"
+                class="action-card"
+            >
+                <div class="action-icon">👤</div>
+
+                <div class="action-text">
+                    <strong>Edit Profile</strong>
+                    <span>Update your info</span>
+                </div>
+
+                <div class="action-arrow">→</div>
+            </a>
+
+
+            <button
+                class="action-card"
+                onclick="cancelSOS()"
+            >
+                <div class="action-icon">🛑</div>
+
+                <div class="action-text">
+                    <strong>Cancel SOS</strong>
+                    <span>Deactivate active alert</span>
+                </div>
+
+                <div class="action-arrow">→</div>
+            </button>
+
+        </div>
+
+    </section>
+
+
+
+    {% if session.get("is_admin") %}
+    <div class="admin-link-bar">
+        <a href="/admin">
+            🛡️ Admin Dashboard
+        </a>
+    </div>
+    {% endif %}
+
+</div>
+
+
+
+<script>
+
+const USER_ID = {{ user.id }};
+let safetyMode = false;
+let safetyInterval = null;
+
+
+
+async function triggerSOS() {
+
+    const btn =
+        document.getElementById("sosBtn");
+
+    btn.classList.add("triggered");
+
+    btn.querySelector(".sos-label")
+       .textContent = "...";
+
+    if (!navigator.geolocation) {
+        showSOSMsg(
+            "❌ Browser location not supported.",
+            "error"
+        );
+        resetSOS();
+        return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+
+        async function(pos) {
+
+            const lat =
+                pos.coords.latitude;
+
+            const lon =
+                pos.coords.longitude;
+
+            const res = await fetch(
+                "/sos",
+                {
+                    method: "POST",
+
+                    headers: {
+                        "Content-Type":
+                        "application/json"
+                    },
+
+                    body: JSON.stringify({
+                        user_id: USER_ID,
+                        lat: lat,
+                        lon: lon
+                    })
+                }
+            );
+
+            const data = await res.json();
+
+            if (data.success) {
+
+                showSOSMsg(
+                    "✅ SOS sent successfully!",
+                    "success"
+                );
+
+                btn.querySelector(".sos-label")
+                   .textContent = "SENT";
+
+                setTimeout(
+                    resetSOS,
+                    3000
+                );
+
+            } else {
+
+                showSOSMsg(
+                    "❌ " + data.message,
+                    "error"
+                );
+
+                resetSOS();
+            }
+
+        },
+
+        function() {
+            showSOSMsg(
+                "❌ Please allow location access.",
+                "error"
+            );
+
+            resetSOS();
+        }
+
+    );
+}
+
+
+
+function resetSOS() {
+
+    const btn =
+        document.getElementById("sosBtn");
+
+    btn.classList.remove("triggered");
+
+    btn.querySelector(".sos-label")
+       .textContent = "SOS";
+}
+
+
+
+function showSOSMsg(text, type) {
+
+    const el =
+        document.getElementById("sosMsg");
+
+    el.textContent = text;
+
+    el.className =
+        "sos-msg " + type;
+}
+
+
+
+function toggleSafetyMode() {
+
+    safetyMode = !safetyMode;
+
+    const dot =
+        document.getElementById("safetyDot");
+
+    const status =
+        document.getElementById("safetyStatus");
+
+    if (safetyMode) {
+
+        dot.classList.add("active");
+
+        status.textContent =
+            "On — auto update every 30s";
+
+        safetyInterval =
+            setInterval(
+                triggerSOS,
+                30000
+            );
+
+    } else {
+
+        dot.classList.remove("active");
+
+        status.textContent =
+            "Off — tap to enable";
+
+        clearInterval(
+            safetyInterval
+        );
+    }
+}
+
+
+
+async function cancelSOS() {
+
+    const res = await fetch(
+        "/unsos",
+        {
+            method: "POST"
+        }
+    );
+
+    const data =
+        await res.json();
+
+    if (data.success) {
+
+        showSOSMsg(
+            "🛑 SOS Cancelled",
+            "success"
+        );
+
+    } else {
+
+        showSOSMsg(
+            "❌ Failed to cancel",
+            "error"
+        );
+    }
+}
+
+</script>
+
+</body>
+</html>

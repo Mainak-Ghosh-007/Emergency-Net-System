@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>EmergencyNet — Live Map</title>
+
+<link rel="stylesheet" href="/static/css/style.css">
+
+<link rel="stylesheet"
+href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+</head>
+
+<body class="map-body">
+
+
+<!-- NAVBAR -->
+<nav class="navbar">
+
+    <a href="/dashboard" class="nav-back">
+        ← Back
+    </a>
+
+    <div class="nav-brand">
+        🗺️ Live Map
+    </div>
+
+    <div class="nav-user">
+        {{ user.name }}
+    </div>
+
+</nav>
+
+
+
+<div class="map-layout">
+
+    <!-- SIDEBAR -->
+    <div class="map-sidebar">
+
+        <div class="sidebar-inner">
+
+            <!-- SEARCH -->
+            <div class="sidebar-section">
+
+                <h3>
+                    Find Nearby
+                </h3>
+
+                <div class="type-grid">
+
+                    <button
+                        class="type-btn active"
+                        onclick="selectType(this,'hospital')"
+                    >
+                        🏥 Hospital
+                    </button>
+
+                    <button
+                        class="type-btn"
+                        onclick="selectType(this,'police')"
+                    >
+                        🚔 Police
+                    </button>
+
+                    <button
+                        class="type-btn"
+                        onclick="selectType(this,'fire_station')"
+                    >
+                        🚒 Fire
+                    </button>
+
+                    <button
+                        class="type-btn"
+                        onclick="selectType(this,'pharmacy')"
+                    >
+                        💊 Pharmacy
+                    </button>
+
+                    <button
+                        class="type-btn"
+                        onclick="selectType(this,'atm')"
+                    >
+                        🏧 ATM
+                    </button>
+
+                </div>
+
+
+                <label class="radius-label">
+                    Radius:
+                </label>
+
+                <select
+                    id="radius"
+                    class="radius-select"
+                >
+                    <option value="2000">
+                        2 KM
+                    </option>
+
+                    <option value="5000">
+                        5 KM
+                    </option>
+
+                    <option
+                        value="10000"
+                        selected
+                    >
+                        10 KM
+                    </option>
+
+                    <option value="20000">
+                        20 KM
+                    </option>
+                </select>
+
+
+                <button
+                    class="btn-search"
+                    onclick="findNearby()"
+                >
+                    🔍 Search Nearby
+                </button>
+
+            </div>
+
+
+
+            <!-- LOCATION -->
+            <div class="sidebar-section">
+
+                <h3>
+                    My Location
+                </h3>
+
+                <div class="loc-info">
+
+                    <span class="loc-dot pulse"></span>
+
+                    <span id="locText">
+                        Detecting GPS...
+                    </span>
+
+                </div>
+
+            </div>
+
+
+
+            <!-- RESULTS -->
+            <div
+                id="resultsSection"
+                class="sidebar-section hidden"
+            >
+
+                <h3>
+                    Results
+                    <span
+                        id="resultsCount"
+                        class="badge"
+                    ></span>
+                </h3>
+
+                <div
+                    id="placesList"
+                    class="places-list"
+                ></div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+
+    <!-- MAP -->
+    <div id="map"></div>
+
+</div>
+
+
+
+<!-- SOS BUTTON -->
+<button
+    class="sos-fab"
+    onclick="triggerSOS()"
+>
+🆘
+</button>
+
+
+
+<script>
+
+const USER_ID = {{ user.id }};
+
+let map;
+let userLat;
+let userLon;
+let userMarker;
+let placeMarkers = [];
+
+let selectedType = "hospital";
+
+
+
+/* ------------------ MAP INIT ------------------ */
+
+map = L.map("map").setView(
+    [17.6868, 83.2185],
+    13
+);
+
+L.tileLayer(
+    "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+    {
+        attribution:
+        "© OpenStreetMap"
+    }
+).addTo(map);
+
+
+
+/* ------------------ USER LOCATION ------------------ */
+
+function initLocation() {
+
+    if (!navigator.geolocation) {
+        document.getElementById(
+            "locText"
+        ).textContent =
+        "GPS not supported";
+        return;
+    }
+
+    navigator.geolocation.watchPosition(
+
+        function(pos) {
+
+            userLat =
+                pos.coords.latitude;
+
+            userLon =
+                pos.coords.longitude;
+
+            document.getElementById(
+                "locText"
+            ).textContent =
+            userLat.toFixed(5)
+            + ", "
+            + userLon.toFixed(5);
+
+
+            if (userMarker) {
+
+                userMarker.setLatLng(
+                    [userLat, userLon]
+                );
+
+            } else {
+
+                userMarker =
+                    L.marker(
+                        [userLat, userLon]
+                    )
+                    .addTo(map)
+                    .bindPopup(
+                        "📍 You are here"
+                    )
+                    .openPopup();
+
+                map.setView(
+                    [userLat, userLon],
+                    15
+                );
+            }
+
+        },
+
+        function() {
+            document.getElementById(
+                "locText"
+            ).textContent =
+            "Permission denied";
+        },
+
+        {
+            enableHighAccuracy: true
+        }
+
+    );
+}
+
+
+
+/* ------------------ SELECT TYPE ------------------ */
+
+function selectType(btn, type) {
+
+    document
+    .querySelectorAll(".type-btn")
+    .forEach(function(b) {
+        b.classList.remove("active");
+    });
+
+    btn.classList.add("active");
+
+    selectedType = type;
+}
+
+
+
+/* ------------------ CLEAR MARKERS ------------------ */
+
+function clearMarkers() {
+
+    placeMarkers.forEach(
+        function(marker) {
+            map.removeLayer(marker);
+        }
+    );
+
+    placeMarkers = [];
+}
+
+
+
+/* ------------------ FIND NEARBY ------------------ */
+async function findNearby() {
+
+    if (!userLat || !userLon) {
+        alert("Location not ready");
+        return;
+    }
+
+    clearMarkers();
+
+    const radius =
+        document.getElementById("radius").value;
+
+    const btn =
+        document.querySelector(".btn-search");
+
+    btn.innerHTML = "Searching...";
+
+    try {
+
+        const res = await fetch("/nearby", {
+            method: "POST",
+            headers: {
+                "Content-Type":"application/json"
+            },
+            body: JSON.stringify({
+                lat: userLat,
+                lon: userLon,
+                type: selectedType,
+                radius: radius
+            })
+        });
+
+        const data = await res.json();
+
+        console.log(data);
+
+        if (data.success) {
+
+            if (data.places.length > 0) {
+                renderPlaces(data.places);
+            } else {
+                alert("No places found.");
+            }
+
+        } else {
+            alert(data.message);
+        }
+
+    } catch(err) {
+        alert("Server error.");
+    }
+
+    btn.innerHTML = "🔍 Search Nearby";
+}
+
+
+/* ------------------ RENDER ------------------ */
+
+function renderPlaces(places) {
+
+    const list =
+        document.getElementById(
+            "placesList"
+        );
+
+    const resultBox =
+        document.getElementById(
+            "resultsSection"
+        );
+
+    const count =
+        document.getElementById(
+            "resultsCount"
+        );
+
+    resultBox.classList.remove(
+        "hidden"
+    );
+
+    count.textContent =
+        places.length;
+
+    list.innerHTML = "";
+
+
+    const bounds = [];
+
+    bounds.push(
+        [userLat, userLon]
+    );
+
+
+    places.forEach(
+        function(place, i) {
+
+            const marker =
+                L.marker(
+                    [
+                        place.lat,
+                        place.lon
+                    ]
+                )
+                .addTo(map)
+                .bindPopup(
+                    "<b>"
+                    + place.name
+                    + "</b><br>"
+                    + place.distance_km
+                    + " km away"
+                );
+
+            placeMarkers.push(
+                marker
+            );
+
+            bounds.push(
+                [
+                    place.lat,
+                    place.lon
+                ]
+            );
+
+
+            const div =
+                document.createElement(
+                    "div"
+                );
+
+            div.className =
+                "place-card";
+
+            div.innerHTML = `
+                <strong>
+                ${i+1}. ${place.name}
+                </strong>
+
+                <span>
+                📏 ${place.distance_km} km
+                </span>
+
+                <button onclick="
+                zoomTo(
+                ${place.lat},
+                ${place.lon}
+                )">
+                🎯 View
+                </button>
+            `;
+
+            list.appendChild(div);
+
+        }
+    );
+
+    map.fitBounds(bounds);
+}
+
+
+
+/* ------------------ ZOOM ------------------ */
+
+function zoomTo(lat, lon) {
+
+    map.setView(
+        [lat, lon],
+        17
+    );
+}
+
+
+
+/* ------------------ SOS ------------------ */
+
+async function triggerSOS() {
+
+    if (!userLat || !userLon) {
+        alert("GPS not ready");
+        return;
+    }
+
+    const res =
+        await fetch(
+            "/sos",
+            {
+                method: "POST",
+
+                headers: {
+                    "Content-Type":
+                    "application/json"
+                },
+
+                body: JSON.stringify({
+                    user_id: USER_ID,
+                    lat: userLat,
+                    lon: userLon
+                })
+            }
+        );
+
+    const data =
+        await res.json();
+
+    if (data.success) {
+        alert("SOS Sent");
+    } else {
+        alert(data.message);
+    }
+}
+
+
+
+initLocation();
+
+</script>
+
+</body>
+</html>
